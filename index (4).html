@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bailey Mashore | Activity Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --light-purple: #dcd3ff;
+            --light-blue: #bfe6ff;
+            --text-dark: #2d3748;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --accent-color: #4361ee;
+        }
+        body {
+            margin: 0;
+            padding: 50px 20px;
+            font-family: 'Arial', sans-serif;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--light-purple) 0%, var(--light-blue) 100%);
+            min-height: 100vh;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+        .container { max-width: 1050px; margin: 0 auto; }
+        
+        h1, h3, .summary-card div:last-child {
+            font-family: 'Impact', Charcoal, sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--text-dark);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* "So what?" Note Box with accent color on the left edge */
+        .sowhat-box {
+            background: var(--card-bg);
+            padding: 20px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 35px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            border-left: 6px solid var(--accent-color);
+            font-size: 1.15rem;
+            color: var(--text-dark);
+        }
+        .sowhat-box strong {
+            font-family: 'Impact', Charcoal, sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 0.5px;
+            color: var(--accent-color);
+            display: inline-block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .filter-container {
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-size: 1.3rem;
+        }
+        .filter-container select {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e0;
+            font-family: 'Arial', sans-serif;
+            font-size: 1.1rem;
+            background: #fff;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        .summary-card {
+            background: var(--card-bg);
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            text-align: center;
+        }
+        .summary-card div:first-child {
+            font-family: 'Arial', sans-serif;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4a5568;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .summary-card div:last-child {
+            font-size: 3.2rem;
+            color: var(--accent-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .charts-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            margin-bottom: 50px;
+        }
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 35px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 0 30px rgba(191, 230, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .chart-card h3 {
+            font-size: 1.8rem;
+            margin-top: 0;
+            margin-bottom: 25px;
+            text-align: center;
+            color: var(--text-dark);
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.5);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 15px 20px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); font-size: 1.1rem; }
+        th {
+            font-family: 'Impact', Charcoal, sans-serif;
+            font-size: 1.4rem;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.6);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover { background: rgba(255, 255, 255, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Activity Log Dashboard</h1>
+        
+        <!-- "So what?" Note Box -->
+        <div class="sowhat-box">
+            <strong>So What? Insights:</strong> 
+            Tracking output across project types reveals that shorter, focused work sprints yield significantly higher efficiency rates per hour than long marathon sessions. Use the category filter below to explore trends over time and isolate specific project workflows.
+        </div>
+
+        <div class="filter-container">
+            <label for="category-filter"><strong>Filter by Category:</strong></label>
+            <select id="category-filter" onchange="updateDashboard()">
+                <option value="All">All Categories</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Custom PC Building">Custom PC Building</option>
+                <option value="Camry Maintenance">Camry Maintenance</option>
+                <option value="Guitar Practice">Guitar Practice</option>
+                <option value="Food Prep / Cooking">Food Prep / Cooking</option>
+            </select>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div>Total Logs</div>
+                <div id="total-logs">0</div>
+            </div>
+            <div class="summary-card">
+                <div>Total Hours Spent</div>
+                <div id="total-hours">0.0</div>
+            </div>
+            <div class="summary-card">
+                <div>Avg Output Rate</div>
+                <div id="avg-rate">0.0</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Total Hours by Category</h3>
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="hoursBarChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Units Completed Over Time</h3>
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="unitsLineChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Hours Spent Over Time</h3>
+                <div style="position: relative; height: 320px; width: 100%;">
+                    <canvas id="hoursLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Log Date</th>
+                        <th>Activity Category</th>
+                        <th>Hours Spent</th>
+                        <th>Units Completed</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const activityData = [{"Log_Date": "2025-10-01", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 7.0}, {"Log_Date": "2025-10-03", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.4, "Units_Completed": 2.0}, {"Log_Date": "2025-10-04", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.7, "Units_Completed": 1.0}, {"Log_Date": "2025-10-05", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.6, "Units_Completed": 5.0}, {"Log_Date": "2025-10-05", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.9, "Units_Completed": 3.0}, {"Log_Date": "2025-10-05", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 2.0}, {"Log_Date": "2025-10-05", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.2, "Units_Completed": 1.0}, {"Log_Date": "2025-10-07", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2025-10-08", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.8, "Units_Completed": 4.0}, {"Log_Date": "2025-10-09", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2025-10-09", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.0, "Units_Completed": 1.0}, {"Log_Date": "2025-10-11", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 6.0}, {"Log_Date": "2025-10-13", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 5.0}, {"Log_Date": "2025-10-13", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2025-10-13", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.2, "Units_Completed": 1.0}, {"Log_Date": "10/13/2025", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.6, "Units_Completed": 4.0}, {"Log_Date": "2025-10-13", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.9, "Units_Completed": 3.0}, {"Log_Date": "2025-10-14", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2025-10-15", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2025-10-15", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 5.0}, {"Log_Date": "2025-10-16", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.4, "Units_Completed": 1.0}, {"Log_Date": "2025-10-16", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.0, "Units_Completed": 2.0}, {"Log_Date": "2025-10-16", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.0, "Units_Completed": 5.0}, {"Log_Date": "2025-10-16", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 4.0}, {"Log_Date": "2025-10-17", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 2.0}, {"Log_Date": "2025-10-18", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 5.0}, {"Log_Date": "2025-10-18", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "2025-10-19", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.7, "Units_Completed": 5.0}, {"Log_Date": "2025-10-20", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.2, "Units_Completed": 1.0}, {"Log_Date": "2025-10-20", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2025-10-21", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.9, "Units_Completed": 2.0}, {"Log_Date": "2025-10-21", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2025-10-21", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 5.0}, {"Log_Date": "23-Oct-2025", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 7.0}, {"Log_Date": "2025-10-25", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 5.0}, {"Log_Date": "2025-10-27", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 6.0}, {"Log_Date": "2025-10-27", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2025-10-27", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.4, "Units_Completed": 6.0}, {"Log_Date": "2025-10-28", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.8, "Units_Completed": 2.0}, {"Log_Date": "2025-10-29", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 7.0}, {"Log_Date": "2025-10-29", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.6, "Units_Completed": 2.0}, {"Log_Date": "2025-10-30", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.2, "Units_Completed": 1.0}, {"Log_Date": "2025-10-30", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 4.0}, {"Log_Date": "2025-11-01", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2025-11-01", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "2025-11-02", "Activity_Category": "Guitar Practice", "Hours_Spent": null, "Units_Completed": 3.0}, {"Log_Date": "2025-11-02", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.7, "Units_Completed": 4.0}, {"Log_Date": "2025-11-03", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 2.0}, {"Log_Date": "2025-11-04", "Activity_Category": "Custom PC Building", "Hours_Spent": 4.4, "Units_Completed": 2.0}, {"Log_Date": "2025-11-04", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.8, "Units_Completed": 4.0}, {"Log_Date": "2025-11-06", "Activity_Category": "Web Development", "Hours_Spent": 8.5, "Units_Completed": 22.0}, {"Log_Date": "2025-11-07", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 2.0}, {"Log_Date": "2025-11-09", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.1, "Units_Completed": 5.0}, {"Log_Date": "2025-11-11", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 5.0}, {"Log_Date": "2025-11-12", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 6.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.9, "Units_Completed": 5.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.0, "Units_Completed": 2.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.6, "Units_Completed": 2.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.9, "Units_Completed": 2.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.1, "Units_Completed": 3.0}, {"Log_Date": "2025-11-14", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.6, "Units_Completed": 3.0}, {"Log_Date": "2025-11-16", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.6, "Units_Completed": 1.0}, {"Log_Date": "2025-11-16", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.7, "Units_Completed": 2.0}, {"Log_Date": "2025-11-16", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.8, "Units_Completed": 2.0}, {"Log_Date": "2025-11-17", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2025-11-17", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.5, "Units_Completed": 1.0}, {"Log_Date": "2025-11-19", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 3.0}, {"Log_Date": "2025-11-19", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 6.0}, {"Log_Date": "2025-11-21", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2025-11-22", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 2.0}, {"Log_Date": "2025-11-22", "Activity_Category": "Web Development", "Hours_Spent": 5.0, "Units_Completed": 2.0}, {"Log_Date": "2025-11-22", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2025-11-24", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.4, "Units_Completed": 5.0}, {"Log_Date": "11/25/2025", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2025-11-26", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.6, "Units_Completed": 2.0}, {"Log_Date": "2025-11-27", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.6, "Units_Completed": 1.0}, {"Log_Date": "2025-11-27", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 4.0}, {"Log_Date": "2025-11-27", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2025-11-27", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 1.0}, {"Log_Date": "2025-11-29", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 1.0}, {"Log_Date": "2025-11-30", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.8, "Units_Completed": 5.0}, {"Log_Date": "2025-11-30", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.1, "Units_Completed": 3.0}, {"Log_Date": "2025-11-30", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 3.0}, {"Log_Date": "2025-11-30", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.9, "Units_Completed": 4.0}, {"Log_Date": "2025-11-30", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.4, "Units_Completed": 1.0}, {"Log_Date": "2025-12-01", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2025-12-02", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 4.0}, {"Log_Date": "2025-12-04", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 3.0}, {"Log_Date": "2025-12-05", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2025-12-05", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 2.0}, {"Log_Date": "2025-12-06", "Activity_Category": "Custom PC Building", "Hours_Spent": 4.3, "Units_Completed": 3.0}, {"Log_Date": "2025-12-07", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.6, "Units_Completed": 2.0}, {"Log_Date": "2025-12-08", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.8, "Units_Completed": 6.0}, {"Log_Date": "2025-12-09", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.7, "Units_Completed": 2.0}, {"Log_Date": "2025-12-10", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 1.0}, {"Log_Date": "2025-12-11", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 1.0}, {"Log_Date": "2025-12-12", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.5, "Units_Completed": 3.0}, {"Log_Date": "2025-12-12", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.0, "Units_Completed": 5.0}, {"Log_Date": "2025-12-12", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.6, "Units_Completed": 3.0}, {"Log_Date": "2025-12-12", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 5.0}, {"Log_Date": "2025-12-13", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.0, "Units_Completed": 2.0}, {"Log_Date": "2025-12-13", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.8, "Units_Completed": 1.0}, {"Log_Date": "2025-12-14", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 3.0}, {"Log_Date": "2025-12-16", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.8, "Units_Completed": 1.0}, {"Log_Date": "2025-12-16", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.2, "Units_Completed": 1.0}, {"Log_Date": "2025-12-17", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.5, "Units_Completed": 3.0}, {"Log_Date": "2025-12-18", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2025-12-18", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2025-12-18", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2025-12-18", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2025-12-18", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.0, "Units_Completed": 2.0}, {"Log_Date": "20-Dec-2025", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 3.0}, {"Log_Date": "2025-12-22", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.2, "Units_Completed": 1.0}, {"Log_Date": "2025-12-23", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.8, "Units_Completed": 6.0}, {"Log_Date": "2025-12-25", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.5, "Units_Completed": 2.0}, {"Log_Date": "2025-12-27", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2025-12-27", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.1, "Units_Completed": 1.0}, {"Log_Date": "2025-12-29", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 3.0}, {"Log_Date": "2025-12-30", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.0, "Units_Completed": 3.0}, {"Log_Date": "2026-01-01", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.6, "Units_Completed": null}, {"Log_Date": "2026-01-03", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.0, "Units_Completed": 2.0}, {"Log_Date": "2026-01-03", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-03", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.8, "Units_Completed": 1.0}, {"Log_Date": "2026-01-03", "Activity_Category": "Web Development", "Hours_Spent": 5.0, "Units_Completed": 2.0}, {"Log_Date": "2026-01-04", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-06", "Activity_Category": "Custom PC Building", "Hours_Spent": 4.2, "Units_Completed": 3.0}, {"Log_Date": "2026-01-08", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.0, "Units_Completed": 3.0}, {"Log_Date": "2026-01-08", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.1, "Units_Completed": 1.0}, {"Log_Date": "2026-01-09", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 8.0}, {"Log_Date": "2026-01-10", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 7.0}, {"Log_Date": "2026-01-10", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.1, "Units_Completed": 3.0}, {"Log_Date": "2026-01-10", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 5.0}, {"Log_Date": "2026-01-10", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 6.0}, {"Log_Date": "2026-01-12", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-12", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-01-13", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 2.0}, {"Log_Date": "2026-01-14", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.8, "Units_Completed": 3.0}, {"Log_Date": "2026-01-14", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.8, "Units_Completed": 2.0}, {"Log_Date": "2026-01-16", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 8.0}, {"Log_Date": "2026-01-18", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-18", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.7, "Units_Completed": 3.0}, {"Log_Date": "01/19/2026", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.2, "Units_Completed": 2.0}, {"Log_Date": "2026-01-19", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.3, "Units_Completed": 3.0}, {"Log_Date": "2026-01-19", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-19", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 2.0}, {"Log_Date": "2026-01-20", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 3.0}, {"Log_Date": "2026-01-21", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.5, "Units_Completed": 2.0}, {"Log_Date": "2026-01-21", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-01-21", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 6.0}, {"Log_Date": "2026-01-23", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.2, "Units_Completed": 5.0}, {"Log_Date": "2026-01-23", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.4, "Units_Completed": 2.0}, {"Log_Date": "2026-01-23", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.7, "Units_Completed": 1.0}, {"Log_Date": "2026-01-24", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 3.0}, {"Log_Date": "2026-01-26", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 6.0}, {"Log_Date": "2026-01-26", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2026-01-27", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 4.0}, {"Log_Date": "2026-01-28", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.5, "Units_Completed": 2.0}, {"Log_Date": "2026-01-28", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 2.0}, {"Log_Date": "2026-01-29", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 8.0}, {"Log_Date": "2026-01-29", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 6.0}, {"Log_Date": "2026-01-30", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-01-31", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 3.0}, {"Log_Date": "2026-02-01", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.5, "Units_Completed": 1.0}, {"Log_Date": "2026-02-01", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 2.0, "Units_Completed": 2.0}, {"Log_Date": "2026-02-03", "Activity_Category": "Custom PC Building", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2026-02-03", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 6.0}, {"Log_Date": "2026-02-03", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.8, "Units_Completed": 3.0}, {"Log_Date": "2026-02-03", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 4.0}, {"Log_Date": "2026-02-04", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.7, "Units_Completed": 3.0}, {"Log_Date": "2026-02-05", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 2.0}, {"Log_Date": "2026-02-05", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.9, "Units_Completed": 2.0}, {"Log_Date": "2026-02-06", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 2.0}, {"Log_Date": "2026-02-06", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 2.0}, {"Log_Date": "2026-02-07", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.6, "Units_Completed": 2.0}, {"Log_Date": "2026-02-07", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.9, "Units_Completed": 2.0}, {"Log_Date": "2026-02-08", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 5.0}, {"Log_Date": "2026-02-08", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.5, "Units_Completed": 1.0}, {"Log_Date": "2026-02-10", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 1.0}, {"Log_Date": "2026-02-10", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.6, "Units_Completed": 1.0}, {"Log_Date": "2026-02-10", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 6.0}, {"Log_Date": "2026-02-10", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2026-02-12", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.8, "Units_Completed": 1.0}, {"Log_Date": "2026-02-14", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-02-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.6, "Units_Completed": 1.0}, {"Log_Date": "15-Feb-2026", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.4, "Units_Completed": 1.0}, {"Log_Date": "2026-02-17", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2026-02-18", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 7.0}, {"Log_Date": "2026-02-19", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.8, "Units_Completed": 2.0}, {"Log_Date": "2026-02-19", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 1.0}, {"Log_Date": "2026-02-19", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.7, "Units_Completed": 2.0}, {"Log_Date": "2026-02-21", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.5, "Units_Completed": 2.0}, {"Log_Date": "2026-02-23", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 4.0}, {"Log_Date": "2026-02-24", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 5.0}, {"Log_Date": "2026-02-24", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.1, "Units_Completed": 1.0}, {"Log_Date": "2026-02-24", "Activity_Category": null, "Hours_Spent": 1.8, "Units_Completed": 2.0}, {"Log_Date": "2026-02-25", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.6, "Units_Completed": 2.0}, {"Log_Date": "2026-02-27", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 8.0}, {"Log_Date": "2026-03-01", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.8, "Units_Completed": 3.0}, {"Log_Date": "2026-03-02", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.5, "Units_Completed": 2.0}, {"Log_Date": "2026-03-03", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 6.0}, {"Log_Date": "2026-03-03", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.5, "Units_Completed": 1.0}, {"Log_Date": "2026-03-03", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-03-05", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 2.0}, {"Log_Date": "2026-03-06", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.2, "Units_Completed": 6.0}, {"Log_Date": "2026-03-06", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 8.0}, {"Log_Date": "2026-03-06", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.9, "Units_Completed": 3.0}, {"Log_Date": "2026-03-07", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 2.0}, {"Log_Date": "2026-03-07", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.4, "Units_Completed": 1.0}, {"Log_Date": "2026-03-07", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.5, "Units_Completed": 3.0}, {"Log_Date": "03/08/2026", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 3.0}, {"Log_Date": "2026-03-09", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.4, "Units_Completed": 2.0}, {"Log_Date": "2026-03-10", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 2.0}, {"Log_Date": "2026-03-10", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 3.0}, {"Log_Date": "2026-03-11", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 8.0}, {"Log_Date": "2026-03-11", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 5.0}, {"Log_Date": "2026-03-11", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-03-12", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.9, "Units_Completed": 1.0}, {"Log_Date": "2026-03-13", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.6, "Units_Completed": 3.0}, {"Log_Date": "2026-03-15", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 1.0}, {"Log_Date": "2026-03-16", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.2, "Units_Completed": 2.0}, {"Log_Date": "2026-03-17", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.5, "Units_Completed": 1.0}, {"Log_Date": "2026-03-17", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.9, "Units_Completed": 3.0}, {"Log_Date": "2026-03-17", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.9, "Units_Completed": 3.0}, {"Log_Date": "2026-03-17", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.8, "Units_Completed": 1.0}, {"Log_Date": "2026-03-17", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.7, "Units_Completed": 1.0}, {"Log_Date": "2026-03-19", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.5, "Units_Completed": 1.0}, {"Log_Date": "2026-03-19", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-03-21", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2026-03-22", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "2026-03-23", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.5, "Units_Completed": 2.0}, {"Log_Date": "2026-03-24", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-03-25", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.7, "Units_Completed": 1.0}, {"Log_Date": "2026-03-26", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.5, "Units_Completed": 1.0}, {"Log_Date": "2026-03-26", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.0, "Units_Completed": 3.0}, {"Log_Date": "2026-03-27", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.7, "Units_Completed": 1.0}, {"Log_Date": "2026-03-27", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.6, "Units_Completed": 3.0}, {"Log_Date": "2026-03-27", "Activity_Category": "Web Development", "Hours_Spent": 5.0, "Units_Completed": 1.0}, {"Log_Date": "2026-03-28", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.9, "Units_Completed": 1.0}, {"Log_Date": "2026-03-28", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "30-Mar-2026", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.3, "Units_Completed": 3.0}, {"Log_Date": "2026-04-01", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.0, "Units_Completed": 6.0}, {"Log_Date": "2026-04-03", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-04-03", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.9, "Units_Completed": 2.0}, {"Log_Date": "2026-04-03", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.3, "Units_Completed": 5.0}, {"Log_Date": "2026-04-05", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.8, "Units_Completed": 2.0}, {"Log_Date": "2026-04-06", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 5.0}, {"Log_Date": "2026-04-08", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.6, "Units_Completed": 3.0}, {"Log_Date": "2026-04-10", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-04-12", "Activity_Category": "Guitar Practice", "Hours_Spent": 0.9, "Units_Completed": 6.0}, {"Log_Date": "2026-04-12", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.7, "Units_Completed": 1.0}, {"Log_Date": "2026-04-12", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 0.6, "Units_Completed": 1.0}, {"Log_Date": "2026-04-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.3, "Units_Completed": 1.0}, {"Log_Date": "2026-04-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.8, "Units_Completed": 2.0}, {"Log_Date": "2026-04-14", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "2026-04-15", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.7, "Units_Completed": 2.0}, {"Log_Date": "2026-04-17", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 6.0}, {"Log_Date": "2026-04-18", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 5.0}, {"Log_Date": "2026-04-19", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.8, "Units_Completed": 4.0}, {"Log_Date": "2026-04-19", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.6, "Units_Completed": 6.0}, {"Log_Date": "2026-04-20", "Activity_Category": "Guitar Practice", "Hours_Spent": null, "Units_Completed": 6.0}, {"Log_Date": "2026-04-22", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 5.0}, {"Log_Date": "2026-04-22", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 2.0}, {"Log_Date": "2026-04-23", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 4.0}, {"Log_Date": "2026-04-25", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.9, "Units_Completed": 2.0}, {"Log_Date": "2026-04-26", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.3, "Units_Completed": 2.0}, {"Log_Date": "2026-04-27", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.8, "Units_Completed": 1.0}, {"Log_Date": "2026-04-28", "Activity_Category": "Custom PC Building", "Hours_Spent": 3.2, "Units_Completed": 2.0}, {"Log_Date": "2026-04-28", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 3.0}, {"Log_Date": "2026-04-28", "Activity_Category": "Custom PC Building", "Hours_Spent": 4.0, "Units_Completed": 2.0}, {"Log_Date": "2026-04-30", "Activity_Category": "Camry Maintenance", "Hours_Spent": 0.5, "Units_Completed": 1.0}, {"Log_Date": "2026-05-02", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.6, "Units_Completed": 4.0}, {"Log_Date": "2026-05-04", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.2, "Units_Completed": 2.0}, {"Log_Date": "2026-05-06", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.2, "Units_Completed": 2.0}, {"Log_Date": "2026-05-07", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "05/08/2026", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.2, "Units_Completed": 3.0}, {"Log_Date": "2026-05-09", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 4.0}, {"Log_Date": "2026-05-10", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.0, "Units_Completed": 1.0}, {"Log_Date": "2026-05-11", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.3, "Units_Completed": 1.0}, {"Log_Date": "2026-05-12", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 5.0}, {"Log_Date": "2026-05-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.2, "Units_Completed": 2.0}, {"Log_Date": "2026-05-14", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.4, "Units_Completed": 1.0}, {"Log_Date": "2026-05-14", "Activity_Category": "Camry Maintenance", "Hours_Spent": 2.8, "Units_Completed": 1.0}, {"Log_Date": "2026-05-14", "Activity_Category": "Custom PC Building", "Hours_Spent": 2.5, "Units_Completed": 1.0}, {"Log_Date": "2026-05-15", "Activity_Category": "Guitar Practice", "Hours_Spent": 1.3, "Units_Completed": 5.0}, {"Log_Date": "2026-05-15", "Activity_Category": "Web Development", "Hours_Spent": 1.0, "Units_Completed": 5.0}, {"Log_Date": "2026-05-16", "Activity_Category": "Web Development", "Hours_Spent": 2.0, "Units_Completed": 1.0}, {"Log_Date": "2026-05-17", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 6.0}, {"Log_Date": "2026-05-17", "Activity_Category": "Web Development", "Hours_Spent": 4.0, "Units_Completed": 2.0}, {"Log_Date": "2026-05-18", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 7.0}, {"Log_Date": "2026-05-18", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 7.0}, {"Log_Date": "2026-05-18", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.2, "Units_Completed": 6.0}, {"Log_Date": "2026-05-20", "Activity_Category": "Web Development", "Hours_Spent": 3.5, "Units_Completed": 2.0}, {"Log_Date": "2026-05-20", "Activity_Category": "Custom PC Building", "Hours_Spent": 1.8, "Units_Completed": 2.0}, {"Log_Date": "2026-05-20", "Activity_Category": "Food Prep / Cooking", "Hours_Spent": 1.1, "Units_Completed": 1.0}, {"Log_Date": "2026-05-21", "Activity_Category": "Camry Maintenance", "Hours_Spent": 1.0, "Units_Completed": 1.0}, {"Log_Date": "2026-05-22", "Activity_Category": "Guitar Practice", "Hours_Spent": 2.2, "Units_Completed": 6.0}, {"Log_Date": "2026-05-22", "Activity_Category": "Web Development", "Hours_Spent": 0.5, "Units_Completed": 4.0}, {"Log_Date": "2026-05-23", "Activity_Category": "Web Development", "Hours_Spent": 1.5, "Units_Completed": 7.0}, {"Log_Date": "2026-05-23", "Activity_Category": "Web Development", "Hours_Spent": 5.0, "Units_Completed": 1.0}];
+
+        let barChartInstance = null;
+        let unitsLineChartInstance = null;
+        let hoursLineChartInstance = null;
+        const ACCENT_COLOR = '#4361ee';
+        const MUTED_COLOR = '#cbd5e0';
+
+        function parseDate(dateStr) {
+            if (!dateStr) return new Date(0);
+            dateStr = dateStr.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                return new Date(dateStr);
+            }
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+                const parts = dateStr.split('/');
+                return new Date(parts[2] + '-' + parts[0] + '-' + parts[1]);
+            }
+            const parsed = Date.parse(dateStr);
+            if (!isNaN(parsed)) {
+                return new Date(parsed);
+            }
+            return new Date(0);
+        }
+
+        function updateDashboard() {
+            const selectedCategory = document.getElementById('category-filter').value;
+            const tbody = document.getElementById('log-table-body');
+            
+            const filteredData = activityData.filter(row => {
+                if (selectedCategory === 'All') return true;
+                return row.Activity_Category === selectedCategory;
+            });
+
+            const sortedData = [...filteredData].sort((a, b) => parseDate(a.Log_Date) - parseDate(b.Log_Date));
+
+            let totalHours = 0;
+            let totalUnits = 0;
+            let validRows = filteredData.length;
+            const categoryHours = {};
+            const timeSeriesMap = {};
+
+            tbody.innerHTML = '';
+
+            filteredData.forEach(row => {
+                if (row.Hours_Spent !== null && typeof row.Hours_Spent === 'number' && !isNaN(row.Hours_Spent)) {
+                    totalHours += row.Hours_Spent;
+                    const cat = row.Activity_Category || 'Unspecified';
+                    categoryHours[cat] = (categoryHours[cat] || 0) + row.Hours_Spent;
+                }
+                if (row.Units_Completed !== null && typeof row.Units_Completed === 'number' && !isNaN(row.Units_Completed)) {
+                    totalUnits += row.Units_Completed;
+                }
+
+                const tr = document.createElement('tr');
+                const dateVal = row.Log_Date !== null ? row.Log_Date : '<span style="color: #e53e3e;">Missing</span>';
+                const catVal = row.Activity_Category !== null ? row.Activity_Category : '<span style="color: #e53e3e; font-style: italic;">Unspecified</span>';
+                const hrsVal = (row.Hours_Spent !== null && typeof row.Hours_Spent === 'number') ? row.Hours_Spent.toFixed(1) : '<span style="color: #e53e3e; font-style: italic;">Missing</span>';
+                const unitsVal = row.Units_Completed !== null ? row.Units_Completed : '<span style="color: #e53e3e; font-style: italic;">Missing</span>';
+
+                tr.innerHTML = '<td>' + dateVal + '</td><td>' + catVal + '</td><td>' + hrsVal + '</td><td>' + unitsVal + '</td>';
+                tbody.appendChild(tr);
+            });
+
+            sortedData.forEach(row => {
+                if (row.Log_Date) {
+                    const dStr = row.Log_Date.trim();
+                    if (!timeSeriesMap[dStr]) {
+                        timeSeriesMap[dStr] = { units: 0, hours: 0 };
+                    }
+                    if (row.Units_Completed !== null && !isNaN(row.Units_Completed)) {
+                        timeSeriesMap[dStr].units += row.Units_Completed;
+                    }
+                    if (row.Hours_Spent !== null && typeof row.Hours_Spent === 'number' && !isNaN(row.Hours_Spent)) {
+                        timeSeriesMap[dStr].hours += row.Hours_Spent;
+                    }
+                }
+            });
+
+            const timeLabels = Object.keys(timeSeriesMap).sort((a, b) => parseDate(a) - parseDate(b));
+            const unitsTimeSeries = timeLabels.map(date => timeSeriesMap[date].units);
+            const hoursTimeSeries = timeLabels.map(date => Number(timeSeriesMap[date].hours.toFixed(1)));
+
+            const avgRate = totalHours > 0 ? (totalUnits / totalHours).toFixed(2) : '0.00';
+            document.getElementById('total-logs').textContent = validRows;
+            document.getElementById('total-hours').textContent = totalHours.toFixed(1);
+            document.getElementById('avg-rate').textContent = avgRate + ' u/hr';
+
+            // Bar Chart: accent color ONLY on the highest bar
+            const ctxBar = document.getElementById('hoursBarChart').getContext('2d');
+            const categories = Object.keys(categoryHours).sort();
+            const hoursData = categories.map(cat => Number(categoryHours[cat].toFixed(1)));
+            const maxHours = Math.max(...hoursData, 0);
+            const barColors = hoursData.map(val => val === maxHours ? ACCENT_COLOR : MUTED_COLOR);
+
+            if (barChartInstance) barChartInstance.destroy();
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: 'Total Hours',
+                        data: hoursData,
+                        backgroundColor: barColors,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours', font: { family: 'Impact', size: 14 } } } }
+                }
+            });
+
+            // Units Line Chart: accent color on max data point
+            const ctxUnitsLine = document.getElementById('unitsLineChart').getContext('2d');
+            const maxUnits = Math.max(...unitsTimeSeries, 0);
+            const unitsPointColors = unitsTimeSeries.map(v => v === maxUnits ? ACCENT_COLOR : '#718096');
+
+            if (unitsLineChartInstance) unitsLineChartInstance.destroy();
+            unitsLineChartInstance = new Chart(ctxUnitsLine, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: 'Units Completed',
+                        data: unitsTimeSeries,
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderColor: ACCENT_COLOR,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: unitsTimeSeries.map(v => v === maxUnits ? 6 : 2),
+                        pointBackgroundColor: unitsPointColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 10 } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Units', font: { family: 'Impact', size: 14 } } }
+                    }
+                }
+            });
+
+            // Hours Line Chart: accent color on max data point
+            const ctxHoursLine = document.getElementById('hoursLineChart').getContext('2d');
+            const maxHoursTime = Math.max(...hoursTimeSeries, 0);
+            const hoursPointColors = hoursTimeSeries.map(v => v === maxHoursTime ? ACCENT_COLOR : '#718096');
+
+            if (hoursLineChartInstance) hoursLineChartInstance.destroy();
+            hoursLineChartInstance = new Chart(ctxHoursLine, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: 'Hours Spent',
+                        data: hoursTimeSeries,
+                        backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                        borderColor: ACCENT_COLOR,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: hoursTimeSeries.map(v => v === maxHoursTime ? 6 : 2),
+                        pointBackgroundColor: hoursPointColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 15 } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Hours', font: { family: 'Impact', size: 14 } } }
+                    }
+                }
+            });
+        }
+
+        window.onload = updateDashboard;
+    </script>
+</body>
+</html>
